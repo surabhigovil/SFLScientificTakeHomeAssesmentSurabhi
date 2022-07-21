@@ -1,24 +1,27 @@
-version: '3.7'
+version: '3'
+
 services:
-
-    postgres:
-        image: postgres:9.6
-        environment:
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=postgres
-            - POSTGRES_DB=your_loc
-        # Uncomment these lines to persist data on the local filesystem.
-        #     - PGDATA=/var/lib/postgresql/data/pgdata
-        # volumes:
-        #     - ./pgdata:/var/lib/postgresql/data/pgdata
-
-
-    etlserver:
-        image: python_etl:latest
-        ports:
-          - "3000:3000"
-          - "9000:9000"
-        working_dir: '/data'
-        read_only: false
-        privileged: true
-        tty: true
+  python-etl:
+    build: .
+    privileged: true
+    ports:
+      - 8081:5000
+    depends_on:
+      - database
+    volumes:
+      - ${PWD}:/app
+  
+  database:
+    container_name: mycontainername
+    image: mysql/mysql-server:8.0.23
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: testdb
+    ports:
+      - "3308:3306"
+  
+  admin:    
+    image: adminer    
+    ports:      
+      - "8084:8080"
