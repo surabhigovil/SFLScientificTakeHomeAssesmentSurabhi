@@ -2,8 +2,6 @@
 #render the html template to display the web
 #request class to handle post/get methods
 from flask import Flask, render_template, request
-import imageio 
-from imageio import imsave
 from skimage.transform import resize
 import cv2 as cv
 import numpy as np
@@ -51,7 +49,7 @@ def predict():
     #read the image into memory
     formatImage(request.get_data())
     x =  cv.imread('output.png')
-    x = x[:,:,0]
+    x = x[:,:,0] #convert to grayscale
     #compute a bit-wise inversion so black becomes white and vice versa
     x = np.invert(x)
     #resize the image

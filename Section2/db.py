@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 
 def create_conn():
     """ Create engine """
-    url = 'mysql+pymysql://root:password@database:3306/testdb'
+    url = 'mysql+pymysql://root:password@database:3306/userdb'
     engine = create_engine(url)
     conn = engine.connect()
     print("Connection Created")

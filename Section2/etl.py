@@ -17,7 +17,7 @@ class LoadCsv():
 
     def create_conn(self):
         """ Create engine """
-        url = 'mysql+pymysql://root:password@database:3306/testdb'
+        url = 'mysql+pymysql://root:password@database:3306/userdb'
         try:
             self.engine = create_engine(url)
             self.conn = self.engine.connect()

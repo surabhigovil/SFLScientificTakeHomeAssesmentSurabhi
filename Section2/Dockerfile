@@ -5,5 +5,5 @@ WORKDIR /app
 COPY ./ ./
 
 EXPOSE 5000
-
-ENTRYPOINT ["/app/entrypoint.sh"]
+ 
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]

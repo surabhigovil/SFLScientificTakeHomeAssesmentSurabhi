@@ -1,14 +1,21 @@
 # Use an official Python runtime as a parent image
-FROM python:3.6-slim
-
-# # copy the requirements file into the image
-# COPY ./requirements.txt /app/requirements.txt
+FROM python:3.7-slim
 
 # Set the working directory to /app
 WORKDIR /app
 
-# install the dependencies and packages in the requirements file
-# RUN pip install -r requirements.txt
+# # copy the requirements file into the image
+
+# COPY ./requirements.txt ./app
+
+# # install the dependencies and packages in the requirements file
+# RUN pip install --no-cache-dir -r requirements.txt
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+# RUN pip install flask
+# RUN python -m pip install scikit-image
+# RUN apt-get update && apt-get install -y python3-opencv
 
 # Copy the current directory contents into the container at /app
 COPY . /app
