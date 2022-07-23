@@ -89,9 +89,9 @@ def test():
     test_loss = 0
     correct = 0
     for data, target in test_loader:
-        data, target = Variable(data, torch.no_grad()), Variable(target)
+        data, target = Variable(data), Variable(target)
         output = model(data)
-        test_loss += F.nll_loss(output, target, reduction=sum).item() # sum up batch loss
+        test_loss += F.nll_loss(output, target, reduction="sum").item() # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).long().cpu().sum()
 
@@ -111,5 +111,3 @@ for epoch in range(1, args['epochs'] + 1):
 torch.save(model.state_dict(), "modelStructure.json")
 # serialize weights to HDF5
 torch.save(model.state_dict(), 'modelWeights.pth')
-
-  
