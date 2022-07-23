@@ -1,6 +1,7 @@
 #import flask class
 #render the html template to display the web
 #request class to handle post/get methods
+import flask
 from flask import Flask, render_template, request
 from skimage.transform import resize
 import cv2 as cv
@@ -15,7 +16,6 @@ import base64
 import logging
 import time
 import torch 
-from torch.ao.quantization import QuantStub, QuantStubGroup, DeQuantStub
 from train import Net
 
 log = logging.getLogger()
@@ -56,7 +56,7 @@ def predict():
     x = resize(x,(28,28))
     #convert to a 4D tensor to feed into our model
     x = x.reshape(1,28,28,1)
-    # with graph.as_default():
+    # with graph.as_default():zz
     out = model(x)
     
     print(torch.max(out, 1))
@@ -73,4 +73,4 @@ def formatImage(imgData):
 
 
 if __name__ == '__main__':
-    app.run(debug = True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='0.0.0.0')

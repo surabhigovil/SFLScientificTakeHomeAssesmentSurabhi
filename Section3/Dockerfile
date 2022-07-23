@@ -38,9 +38,9 @@ FROM python:3
 # # # Run app.py when the container launches
 # CMD ["python","app.py"]
 
-WORKDIR /app
+COPY './requirements.txt' /app/requirements.txt
 
-COPY './requirements.txt' .
+WORKDIR /app
 
 # RUN apt-get install libgtk2.0-dev pkg-config -yqq 
 
@@ -48,8 +48,13 @@ RUN pip install --upgrade pip
 
 RUN apt-get update && apt-get install -y python3-opencv
 
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
-COPY . .
+COPY . /app
 
-CMD ["python", "app.py"]
+# Define environment variable
+ENV NAME MNIST-FLASK
+
+ENTRYPOINT [ "python" ]
+
+CMD ["app.py"]

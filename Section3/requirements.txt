@@ -18,5 +18,4 @@ h5py
 scikit-image
 opencv-python
 torch==1.10.2
-torchvision==0.13.0
-fastcore
+torchvision==0.11.3
