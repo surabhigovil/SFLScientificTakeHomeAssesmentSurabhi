@@ -13,3 +13,6 @@ on running docker-compose up getting errored out because docker not able to conn
 Section3:
 
 MNIST PyTorch model deployed as a Flask app using docker.
+Issues not able to resolve: 
+
+ImportError: cannot import name 'QuantStub' from 'torch.ao.quantization' is constricting me from creating a docker container to deploy the falsk app.

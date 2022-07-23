@@ -2,9 +2,10 @@ from sqlalchemy import create_engine
 
 def create_conn():
     """ Create engine """
-    url = 'mysql+pymysql://root:password@database:3306/userdb'
-    engine = create_engine(url)
+    url = 'mysql+pymysql://test:secret@localhost:3306/userdb'
+    engine = create_engine(url, pool_pre_ping=True)
     conn = engine.connect()
+    print("tiger")
     print("Connection Created")
     return conn
 
@@ -14,7 +15,7 @@ def create_table(connection):
 
     queries = [
         ("user","""
-            CREATE TABLE contact (
+            CREATE TABLE user_info (
                 id INT NOT NULL AUTO_INCREMENT,, 
                 first_name VARCHAR(64),
                 last_name VARCHAR(64),

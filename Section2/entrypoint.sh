@@ -11,6 +11,9 @@ fi
 
 python3 -m venv $virtualenv
 . $virtualenv/bin/activate
+$virtualenv/bin/pip install NumPy==1.18.0
+$virtualenv/bin/pip install python-dev-tools
+$virtualenv/bin/pip install pandas
 $virtualenv/bin/pip install -r requirements.txt
 
 # Create tables

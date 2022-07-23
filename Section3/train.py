@@ -1,107 +1,115 @@
-'''Trains a simple convnet on the MNIST dataset.
-Gets to 99.25% test accuracy after 12 epochs
-(there is still a lot of margin for parameter tuning).
-16 seconds per epoch on a GRID K520 GPU.
-'''
-#python 2/3 compatibility
+#Import Libraries
 from __future__ import print_function
-#simplified interface for building models 
-import keras
-#our handwritten character labeled dataset
-from keras.datasets import mnist
-#because our models are simple
-from keras.models import Sequential
-#dense means fully connected layers, dropout is a technique to improve convergence, flatten to reshape our matrices for feeding
-#into respective layers
-from keras.layers import Dense, Dropout, Flatten
-#for convolution (images) and pooling is a technique to help choose the most relevant features in an image
-from keras.layers import Conv2D, MaxPooling2D
-from keras import backend as K
-import tensorflow as tf
+import argparse
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.autograd import Variable
 
-#mini batch gradient descent ftw
-batch_size = 128
-#10 difference characters
-num_classes = 10
-#very short training time
-epochs = 5
+# Based on https://github.com/pytorch/examples/blob/master/mnist/main.py
+args={}
+kwargs={}
+args['batch_size']=1000
+args['test_batch_size']=1000
+args['epochs']=10  #The number of Epochs is the number of times you go through the full dataset. 
+args['lr']=0.01 #Learning rate is how fast it will decend. 
+args['momentum']=0.5 #SGD momentum (default: 0.5) Momentum is a moving average of our gradients (helps to keep direction).
 
-# input image dimensions
-#28x28 pixel images. 
-img_rows, img_cols = 28, 28
+args['seed']=1 #random seed
+args['log_interval']=10
 
-# the data downloaded, shuffled and split between train and test sets
-#if only all datasets were this easy to import and format
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+#load the data
+train_loader = torch.utils.data.DataLoader(
+    datasets.MNIST('../data', train=True, download=True,
+                   transform=transforms.Compose([
+                       transforms.ToTensor(),
+                       transforms.Normalize((0.1307,), (0.3081,))
+                   ])),
+    batch_size=args['batch_size'], shuffle=True, **kwargs)
+test_loader = torch.utils.data.DataLoader(
+    datasets.MNIST('../data', train=False, transform=transforms.Compose([
+                       transforms.ToTensor(),
+                       transforms.Normalize((0.1307,), (0.3081,))
+                   ])),
+    batch_size=args['test_batch_size'], shuffle=True, **kwargs)
 
-#this assumes our data format
-#For 3D data, "channels_last" assumes (conv_dim1, conv_dim2, conv_dim3, channels) while 
-#"channels_first" assumes (channels, conv_dim1, conv_dim2, conv_dim3).
-if K.image_data_format() == 'channels_first':
-    x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-    x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-    input_shape = (1, img_rows, img_cols)
-else:
-    x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-    x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-    input_shape = (img_rows, img_cols, 1)
+class Net(nn.Module):
+    #This defines the structure of the NN.
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+        self.conv2_drop = nn.Dropout2d()  #Dropout
+        self.fc1 = nn.Linear(320, 50)
+        self.fc2 = nn.Linear(50, 10)
 
-#more reshaping
-x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
-x_train /= 255
-x_test /= 255
-print('x_train shape:', x_train.shape)
-print(x_train.shape[0], 'train samples')
-print(x_test.shape[0], 'test samples')
+    def forward(self, x):
+        #Convolutional Layer/Pooling Layer/Activation
+        x = F.relu(F.max_pool2d(self.conv1(x), 2)) 
+        #Convolutional Layer/Dropout/Pooling Layer/Activation
+        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+        x = x.view(-1, 320)
+        #Fully Connected Layer/Activation
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        #Fully Connected Layer/Activation
+        x = self.fc2(x)
+        #Softmax gets probabilities. 
+        return F.log_softmax(x, dim=1)
 
-# convert class vectors to binary class matrices
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
+model = Net()
 
-#build our model
-model = Sequential()
-#convolutional layer with rectified linear unit activation
-model.add(Conv2D(32, kernel_size=(3, 3),
-                 activation='relu',
-                 input_shape=input_shape))
-#again
-model.add(Conv2D(64, (3, 3), activation='relu'))
-#choose the best features via pooling
-model.add(MaxPooling2D(pool_size=(2, 2)))
-#randomly turn neurons on and off to improve convergence
-model.add(Dropout(0.25))
-#flatten since too many dimensions, we only want a classification output
-model.add(Flatten())
-#fully connected to get all relevant data
-model.add(Dense(128, activation='relu'))
-#one more dropout for convergence' sake :) 
-model.add(Dropout(0.5))
-#output a softmax to squash the matrix into output probabilities
-model.add(Dense(num_classes, activation='softmax'))
-#Adaptive learning rate (adaDelta) is a popular form of gradient descent rivaled only by adam and adagrad
-#categorical ce since we have multiple classes (10) 
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adadelta(),
-              metrics=['accuracy'])
+optimizer = optim.SGD(model.parameters(), lr=args['lr'], momentum=args['momentum'])
 
-#train our model
-model.fit(x_train, y_train,
-          batch_size=batch_size,
-          epochs=epochs,
-          verbose=1,
-          validation_data=(x_test, y_test))
- #how well did we do? 
-score = model.evaluate(x_test, y_test, verbose=0)
-#show the loss and accuracy after our training
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
 
+def train(epoch):
+    model.train()
+    for batch_idx, (data, target) in enumerate(train_loader):
+        #Variables in Pytorch are differenciable. 
+        data, target = Variable(data), Variable(target)
+        #This will zero out the gradients for this batch. 
+        optimizer.zero_grad()
+        output = model(data)
+        # Calculate the loss The negative log likelihood loss. It is useful to train a classification problem with C classes.
+        loss = F.nll_loss(output, target)
+        #dloss/dx for every Variable 
+        loss.backward()
+        #to do a one-step update on our parameter.
+        optimizer.step()
+        #Print out the loss periodically. 
+        if batch_idx % args['log_interval'] == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
+
+def test():
+    model.eval()
+    test_loss = 0
+    correct = 0
+    for data, target in test_loader:
+        data, target = Variable(data, torch.no_grad()), Variable(target)
+        output = model(data)
+        test_loss += F.nll_loss(output, target, reduction=sum).item() # sum up batch loss
+        pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
+        correct += pred.eq(target.data.view_as(pred)).long().cpu().sum()
+
+    test_loss /= len(test_loader.dataset)
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(test_loader.dataset),
+        100. * correct / len(test_loader.dataset)))
+
+
+for epoch in range(1, args['epochs'] + 1):
+    train(epoch)
+    test()
 
 #Save the model
 # serialize model to JSON
-model_json = model.to_json()
-with open("modelStructure.json", "w") as json_file:
-    json_file.write(model_json)
+# model_json = model.to_json()
+torch.save(model.state_dict(), "modelStructure.json")
 # serialize weights to HDF5
-model.save_weights("modelWeights.h5")
+torch.save(model.state_dict(), 'modelWeights.pth')
+
+  

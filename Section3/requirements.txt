@@ -1,3 +1,4 @@
+-f https://download.pytorch.org/whl/torch_stable.html
 appdirs
 click
 Flask
@@ -13,7 +14,9 @@ six
 Werkzeug
 scipy
 Pillow
-keras
 h5py
 scikit-image
 opencv-python
+torch==1.10.2
+torchvision==0.13.0
+fastcore

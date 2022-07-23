@@ -5,20 +5,18 @@ from flask import Flask, render_template, request
 from skimage.transform import resize
 import cv2 as cv
 import numpy as np
-import keras.models
+# import keras.models
 import re
 import base64
-
-import sys 
-import os
 #sys.path.append(os.path.abspath("."))
-from load import *
+# from load import *
 
 #import cansandra packages to store the input and output data
 import logging
 import time
-import socket
-
+import torch 
+from torch.ao.quantization import QuantStub, QuantStubGroup, DeQuantStub
+from train import Net
 
 log = logging.getLogger()
 log.setLevel('INFO')
@@ -31,13 +29,15 @@ log.addHandler(handler)
 #init flask app
 app = Flask(__name__)
 global model, graph
-model = init()
-    
+model = Net()
+path='modelWeights.pth'
+model.load_state_dict(torch.load(path))
+
 @app.route('/')
 def index():
     return render_template("index.html")
 
-@app.route('/predict/', methods=['GET','POST'])
+@app.route('/predict', methods=['GET', 'POST'])
 def predict():
     #get the time
     uploadtime=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
@@ -57,12 +57,11 @@ def predict():
     #convert to a 4D tensor to feed into our model
     x = x.reshape(1,28,28,1)
     # with graph.as_default():
-    out = model.predict(x)
+    out = model(x)
     
-    print(out)
-    print(np.argmax(out, axis=1))
+    print(torch.max(out, 1))
     print(uploadtime)
-    response = np.array_str(np.argmax(out, axis=1))
+    response = np.array_str(torch.max(out, 1))
     print(str(response))
     return response
 
@@ -72,5 +71,6 @@ def formatImage(imgData):
     with open('output.png','wb') as output:
         output.write(base64.decodebytes(imgstr))
 
+
 if __name__ == '__main__':
-    app.run(debug = True, host='0.0.0.0', port=5000)
+    app.run(debug = True, host='0.0.0.0', port=80)

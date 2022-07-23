@@ -17,7 +17,7 @@ class LoadCsv():
 
     def create_conn(self):
         """ Create engine """
-        url = 'mysql+pymysql://root:password@database:3306/userdb'
+        url = 'mysql+pymysql://test:secret@localhost:3306/userdb'
         try:
             self.engine = create_engine(url)
             self.conn = self.engine.connect()
@@ -69,39 +69,7 @@ class LoadCsv():
             return "%s %s" % (p1.upper(), p2)
         else:
             return val
-
-    def sanitize_date(self,val):
-        from dateutil.parser import parse
-        try:
-            new_date = parse(val)
-            return str(new_date)
-        except Exception as e:
-            print("Error Sanitizing date: %s" % e)
-            return val
-            
-
-    def sanitize_mobile_numbers(self, val):
-        """ Add "64" prefix to front of mobile number """
-        if str(val).startswith("64"):
-            return val
-        else:
-            return "64%s" % val
     
-    def sanitize_landline_numbers(self, val):
-        """ Add "09" prefix to front of landline number """
-        if str(val).startswith("(09)") or str(val).startswith("09"):
-            return val
-        elif str(val).startswith("64"):
-            return val
-        else:
-            return "09-%s" % val
-    
-    def sanitize_notes(self, val):
-        """ Sanitize notes column """
-        # sanitize emoji
-        val = val.encode('ascii', 'ignore').decode('ascii')
-
-        return val
     
     def main_sanitize_data(self):
         """ Main Sanitize function to sanitize data """
